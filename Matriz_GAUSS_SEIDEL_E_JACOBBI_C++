@@ -1,0 +1,376 @@
+#include <iostream>
+#include <stdio.h>
+#include <cstdlib>
+#include <cmath>
+#include <cctype>
+#define LIMPAR "clear" // "clear" para Linux(Terminal) e "cls" PARA WINDOWS
+#define min_ordem 100
+using namespace std;
+
+class Matriz{
+private:
+    int ordem;
+    float matriz_a[min_ordem][min_ordem];
+    float matriz_b[min_ordem];
+    float matriz_x[min_ordem];
+    float valorDeX[min_ordem];
+    float xp[min_ordem];
+    float x_inicio[min_ordem];
+    float primeiroCalculo;
+    float tolerancia;
+    float somarLinha;
+   // float somarLinha =0;
+    int interacao;
+    //int interacao = 0;
+    float distancia;
+    //float distancia = 0;
+
+public:
+    void mensagem(int p){
+
+        switch(p){
+            case  1:
+                cout << " \n Bem Vindo ! \n" << endl;
+                break;
+            case 2:
+                cout << "Diagonal Principal nao pode ser Zero";
+                break;
+            case 3:
+                cout << "Digite Novamente: ";
+                break;
+            case 4:
+                cout << " Deseja Criar uma matriz Interativa [S/n]?: ";
+                break;
+            case 5:
+                cout << " Metodo de Gauss Seidel (S) ou Jacobbi (J) ?: ";
+                break;
+        }
+
+    }// Message
+
+    void set_ordem(int ord){
+        ordem = ord;
+
+    }
+
+    void set_tolerancia(double toler){
+
+        tolerancia = toler;
+    }
+    void criar_matriz_a(){
+
+        int i,j;
+        for(i=1; i <= ordem; i++){
+            for(j=1; j<= ordem; j++){
+               printf("Matriz A posicao a[%d][%d]: ", i,j);
+               scanf("%f", &matriz_a[i][j]);
+
+               //-- Não deixa a Diagonal principal ter numero zero
+
+               if((j == i ) && (matriz_a[i][j] == 0)){
+                    do{
+                        mensagem(2); cout << endl;
+                        mensagem(3);
+                        scanf("%f", &matriz_a[i][j]);
+                    }while(matriz_a[i][j] == 0);
+               }
+            //cout << matriz_a[i][j] << endl;
+            }
+        }
+    }
+    void criar_matriz_b(){
+        int i;
+        for(i=1; i<= ordem; i++){
+            printf("Matriz B posicao B[%d]: ", i);
+            scanf("%f", &matriz_b[i]);
+            //cout << matriz_b[i] << endl;
+        }
+    }
+
+    void criar_matriz_inicial(){  /// Matriz inicial ou matriz das variaveis
+        int z;
+        for(z=1; z<=ordem; z++){
+            printf("Matriz Inicial posicao x[%d]: ", z);
+            scanf("%f", &matriz_x[z]);
+        }
+    }
+
+    void visualizar_matriz_aumentada(){
+        int i,j;
+        for(i=1; i <= ordem; i++){
+            for(j=1; j<= ordem; j++){
+               string condicao = (j < ordem ) ?  " ": " |";
+               cout << matriz_a[i][j] << condicao;
+            }
+            cout << matriz_b[i];
+            cout << endl;
+        }
+    }
+
+    ///---- MÉTODO DE CÁLCULO
+    void gauss_seidel(){
+    interacao = 0;
+    float somarLinhaSeidel[100] ={0};
+    float resultadoXSeidel[100] ={0};
+
+    do{
+        interacao += 1;
+        cout << "---------- ITERACAO: "<< interacao << " ----------" << endl;
+        float mta[100][100] ={0};
+
+
+            for(int i=1; i <=ordem; i++){
+                for(int j=1; j <=ordem; j++){
+                    if(j == i){
+                     //matriz_a[i][j] = matriz_a[i][j];
+                     mta[i][j] = matriz_a[i][j];
+                    }
+
+                    if(j != i ){
+                  /*  cout << matriz_x[j]<< "*" << matriz_a[i][j] << " =";*/
+                     //matriz_a[i][j] *= (-1);
+                     mta[i][j] = matriz_a[i][j];
+                     //matriz_a[i][j] *= (-1);
+                     mta[i][j] *= (-1);
+                     //matriz_a[i][j] *= matriz_x[j];
+                     mta[i][j] *= matriz_x[j];
+
+                     //somarLinha += matriz_a[i][j];
+                     somarLinha += mta[i][j];
+                    }
+                    cout << mta[i][j] << " | "; /// Aqui mostra o valor da iteracao atual
+                    if(j != i ){
+                     //matriz_a[i][j] *= (-1);
+                     mta[i][j] = matriz_a[i][j];
+                    }
+                }
+                cout << matriz_b[i] << endl;
+                somarLinhaSeidel[i] = somarLinha;
+                resultadoXSeidel[i] = ((1 / matriz_a[i][i]) * (matriz_b[i] + somarLinhaSeidel[i]));
+                somarLinha = 0;
+            }
+            cout << endl;
+
+            // MOSTRAR VALOR DE X[]
+            for(int k=1; k<=ordem; k++){
+                printf(" X[%d] = ((1/%0.1f) * (%f + %f)) = %f \n", k, matriz_a[k][k], matriz_b[k], somarLinhaSeidel[k], resultadoXSeidel[k] );
+
+            }
+            cout << endl;
+
+            distancia = calcular_distancia_seidel(resultadoXSeidel, matriz_x); // ValorDX = MATRIZ K + 1 E Matriz_x = MATRIZ K
+
+            for(int l=1; l<=ordem; l++){
+                matriz_x[l] = resultadoXSeidel[l];
+
+            }
+
+            cout << " Aperte Enter para Continuar..." << endl;
+            getchar();
+           // system("pause");
+        }while(distancia >tolerancia);
+        //}while(interacao  <= 5);
+
+
+    }// GAUSS SEIDEL
+
+    float calcular_distancia_seidel(float xp_final[], float xp_inicial[]){
+        float parcial[100] ={0};
+        float parcial1[100] ={0};
+        float parcial2[100] ={0};
+        distancia = 0;
+        for(int i=1; i <= ordem; i++){
+           parcial[i] = xp_final[i] - xp_inicial[i]; // X^1 - X^(K-1)
+           parcial1[i]  = abs(parcial[i]);  // COLOCA OS VALORES DE ( K  ) EM MODULO
+           parcial2[i] = abs(xp_final[i]);  // COLOCA OS VALORES DE ( K + 1 ) EM MODULO
+
+           printf("x[%d] = |xFinal - xInicial| = %f - %f = %f \n",i, xp_final[i], xp_inicial[i], parcial1[i]);
+        }
+          float maior_de_x0, maior_de_x1;
+
+          maior_de_x0 = maior_e_menor(parcial1, ordem);
+          maior_de_x1 = maior_e_menor(xp_final, ordem);
+          cout << endl;
+          printf(" MAX| x^(0) | = %f \n", maior_de_x0);
+          printf(" MAX| x^(1) | = %f \n", maior_de_x1);
+          cout << endl;
+
+          float dt;
+          dt = maior_de_x0 / maior_de_x1;
+          //distancia = maior_de_x0 / maior_de_x1;
+
+          cout << "distancia =" << dt << endl<< endl;
+
+         return dt;
+    }
+
+    float  maior_e_menor(float xp[], int tamanho){
+       float maior=0;
+       for(int i=1; i<= ordem; i++){
+       //cout << xp[i] << endl;
+        while(xp[i] > maior){
+            maior = xp[i];
+        }
+       }
+      return maior;
+    }
+
+
+    void gauss_jacobbi(){
+        float somarLinhaJacobbi[100] = {0};
+        float resultadoJacobbi[100] = {0};
+        float auxiliar[100] = {0};
+        float mtaJacobbi[100][100] = {0};
+        interacao = 0;
+        somarLinha = 0;
+
+    do{
+        interacao += 1;
+        cout << "---------- ITERACAO: "<< interacao << " ----------" << endl;
+
+        for(int i=1; i<= ordem; i++){
+            for(int j=1; j<=ordem; j++){
+
+                if(j == i){
+                    mtaJacobbi[i][j] = matriz_a[i][j];
+                }
+
+                if(j != i){
+                    mtaJacobbi[i][j] = matriz_a[i][j];
+                    mtaJacobbi[i][j] *= (-1);
+                    mtaJacobbi[i][j] *= matriz_x[j];
+
+                    somarLinha += mtaJacobbi[i][j];
+                    somarLinhaJacobbi[i] = somarLinha;
+
+
+                }
+
+                string condicao = (j <  ordem ) ?  " | ": " |  "; // SOMENTE FOMATACAO
+                cout << mtaJacobbi[i][j] << condicao;
+
+
+                if(j != i ){
+                     mtaJacobbi[i][j] = matriz_a[i][j];
+
+                   }
+
+            }
+
+            cout << matriz_b[i] <<  endl;
+            //cout << somarLinha << endl;
+            //cout << somarLinhaJacobbi[i] << endl;
+            //cout << somarLinha << endl;
+            //cout << auxiliar[i] << endl;
+            auxiliar[i] = matriz_x[i];
+            somarLinha = 0;
+            resultadoJacobbi[i] = ((1/matriz_a[i][i]) * (matriz_b[i] + somarLinhaJacobbi[i] ) );
+            matriz_x[i] = resultadoJacobbi[i];
+
+
+
+        }
+        cout << endl;
+
+        // MOSTRAR VALOR DE X[] - JACOBBI
+        for(int k=1; k<=ordem; k++){
+            printf("x[%d] = ( 1/%1.f * (%f + (%f)) ) = %f \n", k, matriz_a[k][k], matriz_b[k], somarLinhaJacobbi[k], resultadoJacobbi[k]);
+        }
+         cout << endl;
+
+       distancia = calcular_distancia_seidel(matriz_x, auxiliar); // ValorDX = MATRIZ K + 1 E Matriz_x = MATRIZ K
+
+
+       cout << "Aperte Enter para Continuar..." << endl;
+            getchar();
+        // system("pause");
+     }while(distancia >tolerancia);
+
+    }
+
+///    calcular_distancia_seidel();
+
+};
+
+int main(){
+    char r,r2;
+    Matriz nova, seidel, jacobbi;
+    nova.mensagem(1);
+
+        nova.mensagem(4); // Criar matriz interativa ?
+        cin >> r;
+        r = toupper(r); // DEIXAR LETRAS MAIUSCULAS
+
+    do{
+        if(r == 'S'){
+            nova.mensagem(5);
+            cin >> r2;
+            r2 = toupper(r2);
+            if(r2 == 'S'){
+                // MATRIZ DO TIPO SEIDELL
+                system(LIMPAR);
+                cout << "\n -------------------\\ UTILIZANDO METODO DE SEIDEL //-------------------" << endl;
+                cout << "\n Qual a ordem da matriz que voce deseja Criar?";
+                cout << "\n *obs: A matriz deve ser MAIOR ou IGUAL a 2: ";
+                int orde; cin >> orde;
+                if(orde >= 2 ){
+                    seidel.set_ordem(orde);
+                    cout << "\n Vamos criar a Matriz A"<< endl << endl;
+                    seidel.criar_matriz_a();
+                    cout << "\n Vamos criar a matriz B" << endl << endl;
+                    seidel.criar_matriz_b();
+                    cout << "\n Insira os dados da 'MATRIZ INICIAL'" << endl << endl;
+                    seidel.criar_matriz_inicial();
+                    cout << "\n Defina um valor para a Tolerancia (EPSILON): " << endl << endl;
+                    double tol; cin >> tol;
+                    seidel.set_tolerancia(tol);
+                    cout << "\n Sua matriz Aumentada esta da seguinte maneira [A|B]" << endl << endl;
+                    seidel.visualizar_matriz_aumentada();
+                    cout << "\n -------------------\\ Utilizando a matriz de GAUSS SEIDEL voce conseguiu fazer essas interacoes //-------------------" << endl << endl;
+                    seidel.gauss_seidel();
+
+                }else{
+                    cout << " Nao e possivel fazer matriz menor que 2" << endl;
+                }
+                //cout << "\n -- Fim -- ! " << endl;
+            } /// FINAL DA CONDIÇÃO DE SEIDEL
+
+            if(r2 == 'J'){
+            // MATRIZ DO TIPO JACOBBI
+                system(LIMPAR);
+                cout << "\n -------------------\\ UTILIZANDO METODO DE JACOBBI //-------------------" << endl;
+                //cout  <<  "\n Desculpe-nos essa matriz ainda nao foi desenvolvida :D \n" << endl;
+                cout << "\n Qual a ordem da matriz que voce deseja Criar?";
+                cout << "\n *obs: A matriz deve ser MAIOR ou IGUAL a 2: ";
+                int orde; cin >> orde;
+                    if(orde >= 2 ){
+                        jacobbi.set_ordem(orde);
+                        cout << "\n Vamos criar a Matriz A"<< endl << endl;
+                        jacobbi.criar_matriz_a();
+                        cout << "\n Vamos criar a matriz B" << endl << endl;
+                        jacobbi.criar_matriz_b();
+                        cout << "\n Insira os dados da 'MATRIZ INICIAL'" << endl << endl;
+                        jacobbi.criar_matriz_inicial();
+                        cout << "\n Defina um valor para a Tolerancia (EPSILON): " << endl << endl;
+                        double tol; cin >> tol;
+                        jacobbi.set_tolerancia(tol);
+                        cout << "\n Sua matriz Aumentada esta da seguinte maneira [A|B]" << endl << endl;
+                        jacobbi.visualizar_matriz_aumentada();
+                        cout << "\n -------------------\\ Utilizando a matriz de GAUSS JACOBBI voce conseguiu fazer essas iteracoes //-------------------" << endl << endl;
+                        jacobbi.gauss_jacobbi();
+                        cout << "\n -- Fim -- ! " << endl;
+                    }else{
+                        cout << "Nao e possivel fazer matriz menor que 2" << endl;
+                    }
+                //cout << "\n -- Fim -- ! " << endl;
+            } /// FECHA CONDICAO DE MATRIZ JACOBBI
+
+        } /// FECHA CONDIÇÂO DE R2
+        cout << "\n Deseja Fazer Novamente ?: ";
+        cin >> r;
+        r = toupper(r);
+        system(LIMPAR);
+    }while(r == 'S');
+
+    cout << " -->  Obrigado <--" << endl;
+}
